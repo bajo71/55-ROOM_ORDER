@@ -1,0 +1,8 @@
+      case qry.FieldByName('STATUS').AsInteger of
+      0,
+      1 : l_poruka := 'Received';
+      2 : l_poruka := 'Notified';
+      3 : l_poruka := 'Confirmed';
+      4 : l_poruka := 'Finished';
+      9 : l_poruka := 'Cancelled';
+      end;

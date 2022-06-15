@@ -1,0 +1,159 @@
+Kolega,
+
+ 
+
+https://localhost:44365/API/changeRDstatus?setupId=3&orderid=42&status=notified&sec=37F42D3C22DB3ADFC191316AECCA6EBA93A50850C0FB7C96DD59441C40154FEF 
+
+ 
+
+Kad veæ imamo i setupId dodao sam i njega za hash:
+
+ 
+
+hash := CalculateHMACSHA256('342notified', 'Mal0$oliD4NeBol1');
+
+ 
+
+imaj na umu da æu hashati lovercase status
+
+ 
+
+Znaæi ti mi šalješ:
+
+ 
+
+Notified kada iskoèi konobaru poruka
+
+Confirmed kada prihvati
+
+Cancelled kada se otkaže
+
+Finished kada se završi
+
+ 
+
+ 
+
+Setup id možeš dobiti upitom 
+
+ 
+
+select id from itihis.mail_postavke where pod = :p_pod and org = :p_org 
+
+ 
+
+lp,
+
+Igor
+
+ 
+
+From: igor.marinovic@iticomputers.hr <igor.marinovic@iticomputers.hr> 
+Sent: Thursday, June 10, 2021 8:13 AM
+To: 'Hrvoje Bajurin' <hrvoje.bajurin@iticomputers.hr>
+Subject: Metoda za Hash i ruta za update statusa
+
+ 
+
+Kolega,
+
+ 
+
+Ova metoda radi isti hash u delphij-u i u .net-u, value je „orderId+status“ a salt koji æemo oboje koristiti je „Mal0$oliD4NeBol1“ ali sam ga ostavio kao parametar:
+
+ 
+
+function TfrmPorukeList.CalculateHMACSHA256(const value, salt: String): String;
+
+var
+
+  hmac: TIdHMACSHA256;
+
+  hash: TIdBytes;
+
+begin
+
+  LoadOpenSSLLibrary;
+
+  if not TIdHashSHA256.IsAvailable then
+
+    raise Exception.Create('SHA256 hashing is not available!');
+
+  hmac := TIdHMACSHA256.Create;
+
+  try
+
+    hmac.Key  := IndyTextEncoding_UTF8.GetBytes(salt);
+
+    hash := hmac.HashValue(IndyTextEncoding_UTF8.GetBytes(value));
+
+    Result := ToHex(hash);
+
+  finally
+
+    hmac.Free;
+
+  end;
+
+end;
+
+ 
+
+tako da pozivaš za order 35 i status 2  
+
+ 
+
+hash := CalculateHMACSHA256('352', 'Mal0$oliD4NeBol1');
+
+ 
+
+807A4AAC00EEFB66A26E3D2847B974284809BB41593127907355F60BB10A38E1
+
+ 
+
+hash je 64 znakovni HEX string
+
+ 
+
+a ovo su „uses“:
+
+ 
+
+IdGlobal, IdHashSHA, IdHMAC, IdHMACSHA1, IdSSLOpenSSL
+
+ 
+
+Ruta za promjenu statusa je GET metoda koja vraèa JSON
+
+ 
+
+https://my-stay.eu/API/ChangeRDStatus?orderId=22&status=1&sec=hash - Produkcija
+
+https://test.my-stay.eu/API/ChangeRDStatus?orderId=22&status=1&sec=hash – Test
+
+ 
+
+Ako je sve OK rezultat je:
+
+ 
+
+{"Success":true}
+
+ 
+
+Inaèe:
+
+ 
+
+{"Success":false,"ErrorMessage":"Error: Order not found"}
+{"Success":false,"ErrorMessage":"Error: Order already delivered"}
+{"Success":false,"ErrorMessage":"Error: Order already rejected"}
+ 
+Ili eventualno neka druga greška.
+ 
+Ja sam mislio za statuse:
+ 
+0 – Kada pošaljem tebi a ti vratiš OK
+1 – Kada konobar ili netko na kasi potvrdi narudžbu
+2 – Kada konobar ili netko na kasi odbije narudžbu
+10 – Kada je narudžba dovršena
